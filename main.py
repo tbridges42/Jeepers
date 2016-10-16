@@ -1,5 +1,8 @@
 import configparser
 import daemon
+
+import network
+import streamer
 from os import access, R_OK
 from os.path import isfile
 from argparse import ArgumentParser
@@ -34,4 +37,15 @@ if __name__ == '__main__':
     parser.read(path)
     if args.daemon:
         spawn_daemon()
-    # Do stuff
+    stream = streamer.get_stream()
+    stream.seek(0)
+    with open("servertest.h264", "r+b") as f:
+        f.write(stream.read())
+        connection = network.get_connection(parser)
+        total_bytes = f.tell()
+        bytes_sent = 0
+        f.seek(0)
+        data = f.read()
+        while bytes_sent < total_bytes:
+            bytes_sent = bytes_sent + connection.send(data[bytes_sent:])
+        connection.close()
